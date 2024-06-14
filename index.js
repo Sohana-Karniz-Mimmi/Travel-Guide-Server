@@ -137,6 +137,21 @@ async function run() {
       res.send(result);
     });
 
+    // Get a single Tour Guide data from db using tour guide id
+    app.get("/tour-guide/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await tourGuideCollection.findOne(query);
+      res.send(result);
+    });
+
+    // get a user info by email from db
+    app.get("/tour-guides/:name", async (req, res) => {
+      const name = req.params.name;
+      const result = await tourGuideCollection.findOne({ name });
+      res.send(result);
+    });
+
     /*******************end***************************** */
 
     // Send a ping to confirm a successful connection
