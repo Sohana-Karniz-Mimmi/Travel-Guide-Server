@@ -276,7 +276,7 @@ async function run() {
     res.send(result);
   });
 
-  // Get all jobs data from db for pagination
+  // Get all users data from db for pagination
   app.get("/users", async (req, res) => {
     const size = parseInt(req.query.size);
     const page = parseInt(req.query.page) - 1;
@@ -301,7 +301,7 @@ async function run() {
     res.send(result);
   });
 
-  // Get all jobs data count from db
+  // Get all users data count from db
   app.get("/users-count", async (req, res) => {
     const filter = req.query.filter;
     const search = req.query.search;
@@ -312,6 +312,54 @@ async function run() {
     const count = await usersCollection.countDocuments(query);
 
     res.send({ count });
+  });
+
+  /****************Bookings***********************************************/
+  // Save a booking data in db
+  app.post("/booking", async (req, res) => {
+    const bookingData = req.body;
+    // save room booking info
+    const result = await bookingsCollection.insertOne(bookingData);
+    res.send(result);
+  });
+
+  // get all booking for a normal_user
+  app.get("/my-bookings/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = { touristEmail: email };
+
+    const size = parseInt(req.query.size);
+    const page = parseInt(req.query.page) - 1;
+    let options = {};
+    const result = await bookingsCollection
+      .find(query, options)
+      .skip(page * size)
+      .limit(size)
+      .toArray();
+
+    res.send(result);
+  });
+
+  // Get all bookings data count from db
+  app.get("/my-bookings/count/:email", async (req, res) => {
+    const email = req.params.email;
+    const query = { touristEmail: email };
+    // console.log(query);
+    const count = await bookingsCollection.countDocuments(query);
+
+    res.send({ count });
+  });
+
+  // Update booking status
+  app.patch("/booking/update/:id", async (req, res) => {
+    const id = req.params.id;
+    const status = req.body;
+    const query = { _id: new ObjectId(id) };
+    const updateDoc = {
+      $set: status,
+    };
+    const result = await bookingsCollection.updateOne(query, updateDoc);
+    res.send(result);
   });
   
 
