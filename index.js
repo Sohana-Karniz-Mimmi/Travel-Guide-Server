@@ -224,6 +224,97 @@ async function run() {
     res.send(result);
   });
 
+  /***************Users************************************************* */
+  // save a user data from db
+  app.put("/user", async (req, res) => {
+    const user = req.body;
+
+    const query = { email: user?.email };
+    // check if user already exists in db
+    const isExist = await usersCollection.findOne(query);
+    if (isExist) {
+      if (user.status === "Requested") {
+        // if existing user try to change his role
+        const result = await usersCollection.updateOne(query, {
+          $set: { status: user?.status },
+        });
+        return res.send(result);
+      } else {
+        // if existing user login again
+        return res.send(isExist);
+      }
+    }
+
+    // save user for the first time
+    const options = { upsert: true };
+    const updateDoc = {
+      $set: {
+        ...user,
+        timestamp: Date.now(),
+      },
+    };
+    const result = await usersCollection.updateOne(query, updateDoc, options);
+    res.send(result);
+  });
+
+  // get a user info by email from db
+  app.get("/user/:email", async (req, res) => {
+    const email = req.params.email;
+    const result = await usersCollection.findOne({ email });
+    res.send(result);
+  });
+
+  //update a user role
+  app.patch("/users/update/:email", async (req, res) => {
+    const email = req.params.email;
+    const user = req.body;
+    const query = { email };
+    const updateDoc = {
+      $set: { ...user, timestamp: Date.now() },
+    };
+    const result = await usersCollection.updateOne(query, updateDoc);
+    res.send(result);
+  });
+
+  // Get all jobs data from db for pagination
+  app.get("/users", async (req, res) => {
+    const size = parseInt(req.query.size);
+    const page = parseInt(req.query.page) - 1;
+    const filter = req.query.filter;
+    const search = req.query.search;
+    // console.log(filter, search)
+    // console.log(size, page)
+
+    let query = {
+      name: { $regex: search, $options: "i" },
+    };
+    if (filter) query.role = filter;
+    let options = {};
+    // const result = await usersCollection.find(query, options).toArray();
+    const result = await usersCollection
+      .find(query, options)
+      .skip(page * size)
+      .limit(size)
+      .toArray();
+    // const result = await usersCollection.find().toArray();
+
+    res.send(result);
+  });
+
+  // Get all jobs data count from db
+  app.get("/users-count", async (req, res) => {
+    const filter = req.query.filter;
+    const search = req.query.search;
+    let query = {
+      name: { $regex: search, $options: "i" },
+    };
+    if (filter) query.name = filter;
+    const count = await usersCollection.countDocuments(query);
+
+    res.send({ count });
+  });
+  
+
     /*******************end***************************** */
 
     // Send a ping to confirm a successful connection
