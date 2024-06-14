@@ -152,6 +152,22 @@ async function run() {
       res.send(result);
     });
 
+    /*************Tour Type******************************************/
+    // Get all Tour Type data from db
+    app.get(`/tour-types`, async (req, res) => {
+      const cursor = tourTypeCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get(`/tour-type/:typeName`, async (req, res) => {
+      const typeName = req.params.typeName;
+      const query = { type_name: typeName };
+      const cursor = tourTypeCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     /*******************end***************************** */
 
     // Send a ping to confirm a successful connection
