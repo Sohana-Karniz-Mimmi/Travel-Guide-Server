@@ -168,6 +168,43 @@ async function run() {
       res.send(result);
     });
 
+    /*************Wishlist**************************************/
+    // Save a wishlist data in db
+    app.post("/wishlist", async (req, res) => {
+      const wishlist = req.body;
+      const query = { email: wishlist?.email, userId: wishlist.userId };
+      // check if user already exists in db
+      const isExist = await wishlistCollection.findOne(query);
+      if (isExist) {
+        return res.status(400).send("You have already add on wishlist");
+      }
+      // console.log(wishlist);
+      const result = await wishlistCollection.insertOne(wishlist);
+      res.send(result);
+    });
+
+    // Get by email wishlist data from db
+    app.get("/wishlist/:email", verifyToken, async (req, res) => {
+      const tokenEmail = req?.user?.email;
+      const email = req?.params?.email;
+      console.log(tokenEmail);
+      if (tokenEmail !== email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+      const query = { email: email };
+
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
+      let options = {};
+      const result = await wishlistCollection
+        .find(query, options)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+
+      res.send(result);
+    });
+
     /*******************end***************************** */
 
     // Send a ping to confirm a successful connection
