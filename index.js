@@ -361,6 +361,46 @@ async function run() {
     const result = await bookingsCollection.updateOne(query, updateDoc);
     res.send(result);
   });
+
+  
+
+  // get all booking for a tour Guide
+  app.get("/manage-bookings/:name", async (req, res) => {
+    const guideName = req.params.name;
+    console.log("manage Bookings", guideName);
+    const query = { guideName: guideName };
+    console.log(query);
+
+    const size = parseInt(req.query.size);
+    const page = parseInt(req.query.page) - 1;
+    let options = {};
+    const result = await bookingsCollection
+      .find(query, options)
+      .skip(page * size)
+      .limit(size)
+      .toArray();
+
+    res.send(result);
+  });
+
+  // Get all bookings data count from db
+  app.get("/bookings/count/:name", async (req, res) => {
+    const guideName = req.params.name;
+    console.log("manage Bookings", guideName);
+    const query = { guideName: guideName };
+    console.log(query);
+    const count = await bookingsCollection.countDocuments(query);
+
+    res.send({ count });
+  });
+
+  // delete a booking
+  app.delete("/booking/:id", async (req, res) => {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id) };
+    const result = await bookingsCollection.deleteOne(query);
+    res.send(result);
+  });
   
 
     /*******************end***************************** */
