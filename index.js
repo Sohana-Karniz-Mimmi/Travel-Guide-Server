@@ -204,204 +204,222 @@ async function run() {
 
       res.send(result);
     });
-    
-  // Get all wishlist data count from db
-  app.get("/wishlist/count/:email", async (req, res) => {
-    // const guideName = req.params.name;
-    const email = req?.params?.email;
-    const query = { email: email };
-    console.log(query);
-    const count = await wishlistCollection.countDocuments(query);
 
-    res.send({ count });
-  });
+    // Get all wishlist data count from db
+    app.get("/wishlist/count/:email", async (req, res) => {
+      // const guideName = req.params.name;
+      const email = req?.params?.email;
+      const query = { email: email };
+      console.log(query);
+      const count = await wishlistCollection.countDocuments(query);
 
-  // delete a wishlist data
-  app.delete("/wishlist/:id", async (req, res) => {
-    const id = req.params.id;
-    const query = { _id: new ObjectId(id) };
-    const result = await wishlistCollection.deleteOne(query);
-    res.send(result);
-  });
+      res.send({ count });
+    });
 
-  /***************Users************************************************* */
-  // save a user data from db
-  app.put("/user", async (req, res) => {
-    const user = req.body;
+    // delete a wishlist data
+    app.delete("/wishlist/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await wishlistCollection.deleteOne(query);
+      res.send(result);
+    });
 
-    const query = { email: user?.email };
-    // check if user already exists in db
-    const isExist = await usersCollection.findOne(query);
-    if (isExist) {
-      if (user.status === "Requested") {
-        // if existing user try to change his role
-        const result = await usersCollection.updateOne(query, {
-          $set: { status: user?.status },
-        });
-        return res.send(result);
-      } else {
-        // if existing user login again
-        return res.send(isExist);
+    /***************Users************************************************* */
+    // save a user data from db
+    app.put("/user", async (req, res) => {
+      const user = req.body;
+
+      const query = { email: user?.email };
+      // check if user already exists in db
+      const isExist = await usersCollection.findOne(query);
+      if (isExist) {
+        if (user.status === "Requested") {
+          // if existing user try to change his role
+          const result = await usersCollection.updateOne(query, {
+            $set: { status: user?.status },
+          });
+          return res.send(result);
+        } else {
+          // if existing user login again
+          return res.send(isExist);
+        }
       }
-    }
 
-    // save user for the first time
-    const options = { upsert: true };
-    const updateDoc = {
-      $set: {
-        ...user,
-        timestamp: Date.now(),
-      },
-    };
-    const result = await usersCollection.updateOne(query, updateDoc, options);
-    res.send(result);
-  });
+      // save user for the first time
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...user,
+          timestamp: Date.now(),
+        },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
 
-  // get a user info by email from db
-  app.get("/user/:email", async (req, res) => {
-    const email = req.params.email;
-    const result = await usersCollection.findOne({ email });
-    res.send(result);
-  });
+    // get a user info by email from db
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({ email });
+      res.send(result);
+    });
 
-  //update a user role
-  app.patch("/users/update/:email", async (req, res) => {
-    const email = req.params.email;
-    const user = req.body;
-    const query = { email };
-    const updateDoc = {
-      $set: { ...user, timestamp: Date.now() },
-    };
-    const result = await usersCollection.updateOne(query, updateDoc);
-    res.send(result);
-  });
+    //update a user role
+    app.patch("/users/update/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const query = { email };
+      const updateDoc = {
+        $set: { ...user, timestamp: Date.now() },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
 
-  // Get all users data from db for pagination
-  app.get("/users", async (req, res) => {
-    const size = parseInt(req.query.size);
-    const page = parseInt(req.query.page) - 1;
-    const filter = req.query.filter;
-    const search = req.query.search;
-    // console.log(filter, search)
-    // console.log(size, page)
+    // Get all users data from db for pagination
+    app.get("/users", async (req, res) => {
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
+      const filter = req.query.filter;
+      const search = req.query.search;
+      // console.log(filter, search)
+      // console.log(size, page)
 
-    let query = {
-      name: { $regex: search, $options: "i" },
-    };
-    if (filter) query.role = filter;
-    let options = {};
-    // const result = await usersCollection.find(query, options).toArray();
-    const result = await usersCollection
-      .find(query, options)
-      .skip(page * size)
-      .limit(size)
-      .toArray();
-    // const result = await usersCollection.find().toArray();
+      let query = {
+        name: { $regex: search, $options: "i" },
+      };
+      if (filter) query.role = filter;
+      let options = {};
+      // const result = await usersCollection.find(query, options).toArray();
+      const result = await usersCollection
+        .find(query, options)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+      // const result = await usersCollection.find().toArray();
 
-    res.send(result);
-  });
+      res.send(result);
+    });
 
-  // Get all users data count from db
-  app.get("/users-count", async (req, res) => {
-    const filter = req.query.filter;
-    const search = req.query.search;
-    let query = {
-      name: { $regex: search, $options: "i" },
-    };
-    if (filter) query.name = filter;
-    const count = await usersCollection.countDocuments(query);
+    // Get all users data count from db
+    app.get("/users-count", async (req, res) => {
+      const filter = req.query.filter;
+      const search = req.query.search;
+      let query = {
+        name: { $regex: search, $options: "i" },
+      };
+      if (filter) query.name = filter;
+      const count = await usersCollection.countDocuments(query);
 
-    res.send({ count });
-  });
+      res.send({ count });
+    });
 
-  /****************Bookings***********************************************/
-  // Save a booking data in db
-  app.post("/booking", async (req, res) => {
-    const bookingData = req.body;
-    // save room booking info
-    const result = await bookingsCollection.insertOne(bookingData);
-    res.send(result);
-  });
+    /****************Bookings***********************************************/
+    // Save a booking data in db
+    app.post("/booking", async (req, res) => {
+      const bookingData = req.body;
+      // save room booking info
+      const result = await bookingsCollection.insertOne(bookingData);
+      res.send(result);
+    });
 
-  // get all booking for a normal_user
-  app.get("/my-bookings/:email", async (req, res) => {
-    const email = req.params.email;
-    const query = { touristEmail: email };
+    // get all booking for a normal_user
+    app.get("/my-bookings/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { touristEmail: email };
 
-    const size = parseInt(req.query.size);
-    const page = parseInt(req.query.page) - 1;
-    let options = {};
-    const result = await bookingsCollection
-      .find(query, options)
-      .skip(page * size)
-      .limit(size)
-      .toArray();
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
+      let options = {};
+      const result = await bookingsCollection
+        .find(query, options)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
 
-    res.send(result);
-  });
+      res.send(result);
+    });
 
-  // Get all bookings data count from db
-  app.get("/my-bookings/count/:email", async (req, res) => {
-    const email = req.params.email;
-    const query = { touristEmail: email };
-    // console.log(query);
-    const count = await bookingsCollection.countDocuments(query);
+    // Get all bookings data count from db
+    app.get("/my-bookings/count/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { touristEmail: email };
+      // console.log(query);
+      const count = await bookingsCollection.countDocuments(query);
 
-    res.send({ count });
-  });
+      res.send({ count });
+    });
 
-  // Update booking status
-  app.patch("/booking/update/:id", async (req, res) => {
-    const id = req.params.id;
-    const status = req.body;
-    const query = { _id: new ObjectId(id) };
-    const updateDoc = {
-      $set: status,
-    };
-    const result = await bookingsCollection.updateOne(query, updateDoc);
-    res.send(result);
-  });
+    // Update booking status
+    app.patch("/booking/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const status = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: status,
+      };
+      const result = await bookingsCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
 
-  
+    // get all booking for a tour Guide
+    app.get("/manage-bookings/:name", async (req, res) => {
+      const guideName = req.params.name;
+      console.log("manage Bookings", guideName);
+      const query = { guideName: guideName };
+      console.log(query);
 
-  // get all booking for a tour Guide
-  app.get("/manage-bookings/:name", async (req, res) => {
-    const guideName = req.params.name;
-    console.log("manage Bookings", guideName);
-    const query = { guideName: guideName };
-    console.log(query);
+      const size = parseInt(req.query.size);
+      const page = parseInt(req.query.page) - 1;
+      let options = {};
+      const result = await bookingsCollection
+        .find(query, options)
+        .skip(page * size)
+        .limit(size)
+        .toArray();
 
-    const size = parseInt(req.query.size);
-    const page = parseInt(req.query.page) - 1;
-    let options = {};
-    const result = await bookingsCollection
-      .find(query, options)
-      .skip(page * size)
-      .limit(size)
-      .toArray();
+      res.send(result);
+    });
 
-    res.send(result);
-  });
+    // Get all bookings data count from db
+    app.get("/bookings/count/:name", async (req, res) => {
+      const guideName = req.params.name;
+      console.log("manage Bookings", guideName);
+      const query = { guideName: guideName };
+      console.log(query);
+      const count = await bookingsCollection.countDocuments(query);
 
-  // Get all bookings data count from db
-  app.get("/bookings/count/:name", async (req, res) => {
-    const guideName = req.params.name;
-    console.log("manage Bookings", guideName);
-    const query = { guideName: guideName };
-    console.log(query);
-    const count = await bookingsCollection.countDocuments(query);
+      res.send({ count });
+    });
 
-    res.send({ count });
-  });
+    // delete a booking
+    app.delete("/booking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await bookingsCollection.deleteOne(query);
+      res.send(result);
+    });
 
-  // delete a booking
-  app.delete("/booking/:id", async (req, res) => {
-    const id = req.params.id;
-    const query = { _id: new ObjectId(id) };
-    const result = await bookingsCollection.deleteOne(query);
-    res.send(result);
-  });
-  
+    /*****************Stories**************************************************/
+    app.get(`/stories`, async (req, res) => {
+      const cursor = StoriesCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/stories/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await StoriesCollection.findOne(query);
+      res.send(result);
+    });
+
+    // Save a tour-package data in db
+    app.post("/story", async (req, res) => {
+      const stories = req.body;
+      const result = await StoriesCollection.insertOne(stories);
+      res.send(result);
+    });
 
     /*******************end***************************** */
 
