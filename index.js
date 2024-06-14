@@ -122,7 +122,12 @@ async function run() {
       res.send(result);
     });
 
-    
+    // Save a tour-package data in db
+    app.post("/tour-package", async (req, res) => {
+      const package = req.body;
+      const result = await travelGuideCollection.insertOne(package);
+      res.send(result);
+    });
 
     /*******************end***************************** */
 
