@@ -129,6 +129,14 @@ async function run() {
       res.send(result);
     });
 
+    /*******Tour Guide********/
+    // Get all Tour Guide data from db
+    app.get(`/tour-guide`, async (req, res) => {
+      const cursor = tourGuideCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     /*******************end***************************** */
 
     // Send a ping to confirm a successful connection
