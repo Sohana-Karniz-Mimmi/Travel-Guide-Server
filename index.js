@@ -13,8 +13,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      // "https://job-portal-3285e.web.app",
-      // "https://job-portal-3285e.firebaseapp.com",
+      "https://travel-guide-839c4.web.app",
+      "https://travel-guide-839c4.firebaseapp.com",
     ],
     credentials: true,
   })
@@ -44,9 +44,9 @@ const verifyToken = async (req, res, next) => {
   });
 };
 
-const uri = `mongodb://localhost:27017`;
+// const uri = `mongodb://localhost:27017`;
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2xcjib6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2xcjib6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -73,6 +73,34 @@ async function run() {
     const usersCollection = client.db("TravelGuide").collection("users");
     const bookingsCollection = client.db("TravelGuide").collection("bookings");
     const StoriesCollection = client.db("TravelGuide").collection("stories");
+
+    // verify admin middleware
+    const verifyAdmin = async (req, res, next) => {
+      console.log('hello')
+      const user = req.user
+      const query = { email: user?.email }
+      const result = await usersCollection.findOne(query)
+      console.log('User Email',user)
+      console.log('Admin Result Role',result)
+      if (!result || result?.role !== 'admin')
+        return res.status(401).send({ message: 'unauthorized access!!' })
+
+      next()
+    }
+    // verify host middleware
+    const verifyTourGuide = async (req, res, next) => {
+      console.log('hello')
+      const user = req.user
+      const query = { email: user?.email }
+      const result = await usersCollection.findOne(query)
+      console.log(result?.role)
+      if (!result || result?.role !== 'host') {
+        return res.status(401).send({ message: 'unauthorized access!!' })
+      }
+
+      next()
+    }
+    
 
     /*******Tokens JWT Generate********/
     app.post("/jwt", async (req, res) => {
@@ -173,6 +201,11 @@ async function run() {
     app.post("/wishlist", async (req, res) => {
       const wishlist = req.body;
       const query = { email: wishlist?.email, userId: wishlist.userId };
+
+      if(!wishlist?.email){
+        return res.status(400).send("Please Login First");
+      }
+      
       // check if user already exists in db
       const isExist = await wishlistCollection.findOne(query);
       if (isExist) {
@@ -258,7 +291,7 @@ async function run() {
     });
 
     // get a user info by email from db
-    app.get("/user/:email", async (req, res) => {
+    app.get("/user/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email });
       res.send(result);
@@ -324,7 +357,7 @@ async function run() {
     });
 
     // get all booking for a normal_user
-    app.get("/my-bookings/:email", async (req, res) => {
+    app.get("/my-bookings/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { touristEmail: email };
 
@@ -365,9 +398,9 @@ async function run() {
     // get all booking for a tour Guide
     app.get("/manage-bookings/:name", async (req, res) => {
       const guideName = req.params.name;
-      console.log("manage Bookings", guideName);
+      // console.log("manage Bookings", guideName);
       const query = { guideName: guideName };
-      console.log(query);
+      // console.log(query);
 
       const size = parseInt(req.query.size);
       const page = parseInt(req.query.page) - 1;
@@ -384,7 +417,7 @@ async function run() {
     // Get all bookings data count from db
     app.get("/bookings/count/:name", async (req, res) => {
       const guideName = req.params.name;
-      console.log("manage Bookings", guideName);
+      // console.log("manage Bookings", guideName);
       const query = { guideName: guideName };
       console.log(query);
       const count = await bookingsCollection.countDocuments(query);
