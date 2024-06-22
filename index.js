@@ -76,31 +76,30 @@ async function run() {
 
     // verify admin middleware
     const verifyAdmin = async (req, res, next) => {
-      console.log('hello')
-      const user = req.user
-      const query = { email: user?.email }
-      const result = await usersCollection.findOne(query)
-      console.log('User Email',user)
-      console.log('Admin Result Role',result)
-      if (!result || result?.role !== 'admin')
-        return res.status(401).send({ message: 'unauthorized access!!' })
+      console.log("hello");
+      const user = req.user;
+      const query = { email: user?.email };
+      const result = await usersCollection.findOne(query);
+      console.log("User Email", user);
+      console.log("Admin Result Role", result);
+      if (!result || result?.role !== "admin")
+        return res.status(401).send({ message: "unauthorized access!!" });
 
-      next()
-    }
+      next();
+    };
     // verify host middleware
     const verifyTourGuide = async (req, res, next) => {
-      console.log('hello')
-      const user = req.user
-      const query = { email: user?.email }
-      const result = await usersCollection.findOne(query)
-      console.log(result?.role)
-      if (!result || result?.role !== 'host') {
-        return res.status(401).send({ message: 'unauthorized access!!' })
+      console.log("hello");
+      const user = req.user;
+      const query = { email: user?.email };
+      const result = await usersCollection.findOne(query);
+      console.log(result?.role);
+      if (!result || result?.role !== "host") {
+        return res.status(401).send({ message: "unauthorized access!!" });
       }
 
-      next()
-    }
-    
+      next();
+    };
 
     /*******Tokens JWT Generate********/
     app.post("/jwt", async (req, res) => {
@@ -157,29 +156,6 @@ async function run() {
       res.send(result);
     });
 
-    /*******Tour Guide********/
-    // Get all Tour Guide data from db
-    app.get(`/tour-guide`, async (req, res) => {
-      const cursor = tourGuideCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    // Get a single Tour Guide data from db using tour guide id
-    app.get("/tour-guide/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await tourGuideCollection.findOne(query);
-      res.send(result);
-    });
-
-    // get a user info by email from db
-    app.get("/tour-guides/:name", async (req, res) => {
-      const name = req.params.name;
-      const result = await tourGuideCollection.findOne({ name });
-      res.send(result);
-    });
-
     /*************Tour Type******************************************/
     // Get all Tour Type data from db
     app.get(`/tour-types`, async (req, res) => {
@@ -202,10 +178,10 @@ async function run() {
       const wishlist = req.body;
       const query = { email: wishlist?.email, userId: wishlist.userId };
 
-      if(!wishlist?.email){
+      if (!wishlist?.email) {
         return res.status(400).send("Please Login First");
       }
-      
+
       // check if user already exists in db
       const isExist = await wishlistCollection.findOne(query);
       if (isExist) {
@@ -331,6 +307,25 @@ async function run() {
         .toArray();
       // const result = await usersCollection.find().toArray();
 
+      res.send(result);
+    });
+    // Get all users data from db
+    app.get("/all-users", async (req, res) => {
+      const cursor = usersCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/all/users/name/:name", async (req, res) => {
+      const name = req.params.name;
+      const result = await usersCollection.findOne({ name });
+      res.send(result);
+    });
+    
+    app.get("/all-users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.findOne(query);
       res.send(result);
     });
 
